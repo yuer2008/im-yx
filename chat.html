@@ -207,6 +207,8 @@ ws.onmessage = function(msg){
                 var server_return = data[i]['body'];
                 if(server_return['code'] != 0){
                     console.log('通知服务器失败');
+                }else{
+                    console.log('通知服务器成功');
                 }
             break;
             case 2008:  //server端返回未读消息用户列表
