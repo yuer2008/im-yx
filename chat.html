@@ -1,0 +1,368 @@
+<!-- Chat Widget -->
+<div class="col-md-10">
+  <div class="panel panel-widget chat-widget">
+    <div class="panel-heading">
+      <span class="panel-icon">
+        <i class="fa fa-pencil"></i>
+      </span>
+      <span class="panel-title">对话窗口</span>
+      <button id="logout">退出</button>
+    </div>
+
+    <div id="board" class="panel-body bg-light dark panel-scroller scroller-lg pn">
+        <div id="more" class="center-block" style="text-align:center;">查看更多</div>
+    </div>
+    <div class="panel-footer">
+      <div class="input-group">
+        <input id="msg_content" type="text" class="form-control" placeholder="Enter your message here...">
+        <span class="input-group-btn">
+          <button id="msg_send_btn" class="btn btn-default btn-gradient" type="button">发送消息</button>
+        </span>
+      </div>
+      <!-- /input-group -->
+    </div>
+  </div>
+</div>
+<div class="col-md-2">
+    <h3 clear="btn danger">用户未读消息</h3>
+    <ul class="list-group" id="unread_userlist">
+    </ul>
+</div>
+
+<script src="assets/js/main.js"></script>
+<script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
+<script type="text/javascript">
+
+'use strict';
+var send_btn = $('#msg_send_btn'),board = $('#board'),
+msg_content = $('#msg_content');
+var ws = new WebSocket('ws://192.168.2.222:8090/sub');
+//聊天对象
+var object_id = localStorage.chat_object_id;
+//更多消息起始消息id
+localStorage.more_msg_start_id = '';
+///////////////
+//scroll to top
+var scroll_to = function(){
+  board.get(0).scrollTop = 99999;
+}
+// put msg to chat dialog div
+var append_to_dialog = function(msg_obj, pos){
+    if(typeof pos == 'undefined'){
+        pos = 'tail';
+    }
+    if(msg_obj['type'] == 1){
+        var tpl = '<div class="media">';
+        var is_self_style = '';
+        if(msg_obj['sender_id'] != localStorage.userId){
+            tpl += '<div class="media-left">\
+                <a href="#">\
+                  <img class="media-object" alt="64x64" src="assets/img/avatars/1.jpg">\
+                </a>\
+              </div>';
+        }else{
+            is_self_style = 'background-color:green';
+        }
+        tpl += '<div class="media-body" style="' +is_self_style+ '">\
+            <span class="media-status offline"></span>\
+            <h5 class="media-heading">' + msg_obj['sender_id'] + '\
+              <small> - ' +msg_obj['time']+ '</small>\
+            </h5>' + msg_obj['msg'] + '\
+          </div>';
+        if(msg_obj['sender_id'] == localStorage.userId){
+            tpl += '<div class="media-right">\
+                <a href="#">\
+                  <img class="media-object" alt="64x64" src="assets/img/avatars/1.jpg">\
+                </a>\
+              </div>';
+        }
+        tpl += '</div>';
+    }else if(msg_obj['type'] == 2){
+
+    }
+    if(pos == 'tail'){
+        board.append(tpl);
+    }else if(pos == 'head'){
+        board.prepend(tpl);
+    }
+    scroll_to();
+}
+ws.onopen = function(event){
+    if(typeof localStorage.myToken == 'undefined'){
+      $('#main-content').load('login.html'); 
+    }
+    var auth_data = {
+        "ver": 1,
+        "cmd": 1001,                
+        "seq": 1,                   //客户端自己的标识，服务器原样返回
+        "body":
+            {
+            "user_id" : parseInt(localStorage.userId),     //用户id
+            "type":"web",           //客户端登录终端类型
+            "device" : Math.random()*1000 + "id",        //客户端登录终端标识（如设备信息等，用于区分不同的终端）
+            "token" : localStorage.myToken     //登录营销系统时的token
+            }
+    };
+    var auth_data1 = JSON.stringify(auth_data);
+    ws.send(auth_data1);
+    check_status(ws)
+};
+ws.onerror = function(event){
+    // console.dir(event);
+}
+
+// 收到消息
+ws.onmessage = function(msg){
+    var data = msg.data;
+    if(data == '')return;
+    try{
+        data = JSON.parse(data);
+    }catch(e){
+        console.dir(e.message);
+    }
+    for(var i=0; i< data.length; i++){
+        switch(data[i]['cmd']){
+            case 1002: // user token auth result
+                if(data[i]['body']['code'] == 0){
+                    console.log('user login success')
+                    //step1 get unread msg 拉取有未读消息的用户列表
+                    var get_unread_cmd = {
+                        "ver": 1,
+                        "cmd": 2007,        
+                        "seq": 1,       //客户端自己的标识，服务器原样返回
+                        "body":{}       //消息体为空
+                    };
+                    ws.send(JSON.stringify(get_unread_cmd));
+
+                    //step2, send msg heart beat ,用户验证通过后心跳
+                    var time_h = setInterval(function(){
+                        var beat_data = {
+                            "ver": 1,
+                            "cmd": 1003,        
+                            "seq": 1,       //客户端自己的标识，服务器原样返回
+                            "body":{}       //消息体为空
+                        };
+                        if(ws.readyState == 3){ // 如果连接已关闭
+                            clearInterval(time_h);
+                        }
+                        ws.send(JSON.stringify(beat_data));
+                    }, 100000);
+                }
+            break;
+            case 1004://心跳返回
+            //get server return success;
+                break;
+            case 1005: //踢人通知
+                layer.msg(data[i]['body']['msg'], {icon:2}, function(){
+                    localStorage.removeItem('myToken');
+                    //被踢了,变成未登录状态
+                    $('#main-content').load('login.html');
+
+                });
+            break;    
+            case 2002: // chat one send msg result ,发送聊天消息
+                if(data[i]['body']['code'] == 0){
+                    console.log('send msg success')
+                }
+            break;
+            case 2003: //收到聊天消息 receive message from server
+            
+                var receive_msg_content = data[i]['body'];
+                if(receive_msg_content['data']['receiver_id'] == localStorage.userId){
+                    //给服务器回包
+                    var return_data = JSON.stringify({
+                        'ver' : 1,
+                        'cmd' : 2004,
+                        'seq' : 1,
+                        'body' : {
+                            'sender_id' : receive_msg_content['data']['sender_id'],
+                            'msg_id' : receive_msg_content['data']['msg_id']
+                        }
+                    });
+                    //alert(return_data)
+                    ws.send(return_data);
+                    //消息显示show message 
+                    if(receive_msg_content['data']['msg_type'] == 1){// text
+                        var msg_obj = {
+                            type:1,
+                            msg : receive_msg_content['data']['content']['msg']['text'],
+                            time: receive_msg_content['data']['time'],
+                            sender_id : receive_msg_content['data']['sender_id']
+                        }
+                        append_to_dialog(msg_obj, 'tail');
+                    }else if(receive_msg_content['data']['msg_type'] == 2){//img
+                        var img_thumb = receive_msg_content['data']['content']['pic']['pic_thumb'];
+                        var img_src = receive_msg_content['data']['content']['pic']['pic_src'];
+                        var img = '<img src="' + img_thumb + '">';
+                        append_to_dialog(img, 'tail');
+                    }
+                }
+            break;
+            case 2005:  //server的确认消息的回复信息
+                var server_return = data[i]['body'];
+                if(server_return['code'] != 0){
+                    console.log('通知服务器失败');
+                }
+            break;
+            case 2008:  //server端返回未读消息用户列表
+                var server_return = data[i]['body'];
+                if(server_return['code'] == 0){
+                    var str='',m,s_id, total_count = server_return['data']['total_count'];
+                    var list = server_return['data']['list'];
+                    for(m in list){
+                        s_id = list[m]['sender_id'];
+                        str += '<li class="list-group-item"  data-id="' +s_id+ '">' +s_id+ '</li>';
+                    }
+                    $('#unread_userlist').append(str);
+                }
+            break;
+            case 2010: // server端返回一个用户未读消息列表
+                var server_return = data[i]['body'], m=0, msg_list;
+                if(server_return['code'] == 0){
+                    msg_list = server_return['data']['list'];
+                    localStorage.chat_object_id = server_return['data']['sender_id'];
+                    for(m=0; m < msg_list.length; m++){
+                        if(msg_list[m]['msg_type'] == 1){// text
+                            var msg_obj = {
+                                type:1,
+                                msg : msg_list[m]['content']['msg']['text'],
+                                time: msg_list[m]['time'],
+                                sender_id : server_return['data']['sender_id']
+                            }
+                            append_to_dialog(msg_obj ,'tail');
+                        }else if(msg_list[m]['msg_type'] == 2){//img
+                            var img_thumb = msg_list[m]['content']['pic']['pic_thumb'];
+                            var img_src = msg_list[m]['content']['pic']['pic_src'];
+                            var img = '<img src="' + img_thumb + '">';
+                            append_to_dialog(img ,'tail');
+                        }
+                    } // for end
+                    //收完消息后 给服务器回包
+                    var return_data = JSON.stringify({
+                        'ver' : 1,
+                        'cmd' : 2011,
+                        'seq' : 1,
+                        'body' : {
+                            'sender_id' : localStorage.chat_object_id
+                        }
+                    });
+                    //alert(return_data)
+                    ws.send(return_data);
+                }
+            break;
+            case 2012: //收完消息后 给服务器回包(2011)的返回
+                var server_return = data[i]['body'];
+                if(server_return['code'] != 0){
+                    console.log('通知服务器获取未读消息列表失败(' + server_return['msg'] + ')');
+                }
+            case 2016: // 获取历史聊天记录
+                var server_return = data[i]['body'], m=0;
+                msg_list = server_return['data']['list'];
+                for(m=0; m <msg_list.length; m++){
+                    if(msg_list[m]['msg_type'] == 1){// text
+                        var msg_obj = {
+                            type:1,
+                            msg : msg_list[m]['content']['msg']['text'],
+                            time: msg_list[m]['time'],
+                            sender_id : msg_list[m]['sender_id']
+                        }
+                        append_to_dialog(msg_obj, 'head');
+                    }else if(msg_list[m]['msg_type'] == 2){//img
+                        var img_thumb = msg_list[m]['content']['pic']['pic_thumb'];
+                        var img_src = msg_list[m]['content']['pic']['pic_src'];
+                        var img = '<img src="' + img_thumb + '">';
+                        append_to_dialog(img, 'head');
+                    }
+                    //记录取到的最后一条记录
+                    localStorage.more_msg_start_id = msg_list[i]['msg_id'];
+                } // for end
+            break;
+            default:
+            break;
+        }
+       // console.dir(data[i]);
+    }
+}
+////////////////
+
+//发送消息
+var send = function(msg){
+    append_to_dialog(msg);
+    //send to server
+    var data = {
+        "ver": 1,
+        "cmd": 2001,                
+        "seq": 1,                   //客户端自己的标识，服务器原样返回
+        "body":
+        {
+            //"sender_id":1000, //用户id
+            "receiver_id" : parseInt(localStorage.chat_object_id),     //目标对象id
+            "msg_type":1,           //消息类型 1文本；2图片；3表情……
+            "content":{
+                "msg":{"text" : msg['msg']},  //文字聊天信息
+                "pic":{
+                    "pic_src":"pic1",           //原图路径
+                    "pic_thumb":"pic2"      //缩略图路径
+                    }
+            }
+        }
+    };
+    var data1 = JSON.stringify(data);
+    ws.send(data1);
+    msg_content.val('');
+}
+
+
+send_btn.on('click', function(){
+    var msg = msg_content.val();
+    if(msg == ''){
+        return false;
+    }
+    send({type:1,msg:msg,time : now_time(),sender_id : parseInt(localStorage.userId)});
+});
+//enter 发送消息
+msg_content.keydown(function(event){
+    if (event.keyCode == 13) {
+        var msg = msg_content.val();
+        if(msg == ''){
+            return false;
+        }
+        send({type:1,msg:msg,time : now_time(),sender_id : parseInt(localStorage.userId)});
+    }
+});
+//退出
+$('#logout').on('click', function(){
+    localStorage.clear();
+    location.reload();
+});
+//未读消息列表， 取未读消息
+$('#unread_userlist').on('click', 'li', function(){
+    var data = {
+        "ver": 1,
+        "cmd": 2009,                
+        "seq": 1,                   //客户端自己的标识，服务器原样返回
+        "body":
+        {
+            "sender_id" : parseInt($(this).data('id')),     //目标对象id
+            "page_size" : 100
+        }
+    };
+    ws.send(JSON.stringify(data));
+});
+// 获取更多聊天历史消息
+$('#more').on('click', function(){
+    var data = {
+        "ver": 1,
+        "cmd": 2015,                
+        "seq": 1,                   //客户端自己的标识，服务器原样返回
+        "body":
+        {
+            "object_id" : parseInt(localStorage.chat_object_id),     //目标对象id
+            "msg_id" : localStorage.more_msg_start_id, // 起始消息id
+            "page_size" : 10 // 每页数量
+        }
+    };
+    //alert(localStorage.chat_object_id)
+    ws.send(JSON.stringify(data));
+});
+</script>

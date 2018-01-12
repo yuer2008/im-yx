@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>border test page</title>
+    <style>
+        body{background: #fff;}
+
+        .borderbottom{
+            width:0px;
+            height: 0px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: transparent transparent #333 transparent;
+            position: absolute;
+            top: 10px;
+        }
+        .borderballoon{
+            width: 200px;
+            height: 80px;
+            background: lightgreen;
+            border-radius: 5px;
+            position: relative;
+            top: 30px;
+        }
+        .borderballoon:after{
+            content: "";
+            position: absolute;
+            border-style: solid;
+            border-color: lightgreen transparent transparent;
+            border-width: 10px;
+            bottom: -20px;
+            right:40px;
+        }
+        .flatballoon{
+            width: 200px;
+            height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: relative;
+            top: 60px
+        }
+        .flatballoon:after{
+            content: "";
+            position: absolute;
+            border-style: solid;
+            border-color: #ccc transparent transparent;
+            border-width: 10px;
+            bottom: -20px;
+            right:40px;
+        }
+        .flatballoon:before{
+            content: "";
+            position: absolute;
+            border-style: solid;
+            border-color: white transparent transparent;
+            border-width: 10px;
+            bottom: -19px;
+            right:40px;
+            z-index: 9;
+        }
+        #name:after{
+            content: " world"
+        }
+        #name:first-letter{
+            color: red;
+        }
+        #name:first-line{
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+
+        <div class="borderbottom"></div>
+        <div class="borderballoon"></div>
+        <div class="flatballoon"></div>
+        <div id="name">hello</div>
+
+</body>
+</html>

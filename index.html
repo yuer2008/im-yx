@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- Meta, title, CSS, favicons, etc. -->
+  <meta charset="utf-8">
+  <title>chat</title>
+  <meta name="keywords" content="im" />
+  <meta name="description" content="im">
+  <meta name="author" content="AdminDesigns">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Font CSS (Via CDN) -->
+  <link rel="stylesheet" href="assets/css/bootstrap.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/css/chat2.css"  crossorigin="anonymous">
+  <link rel="stylesheet" href="assets/layer-v2.1/skin/layer.css"  crossorigin="anonymous">
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="assets/img/favicon.ico">
+
+  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+  <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+<![endif]-->
+
+</head>
+
+<body>
+  <div class="container">
+    <div class="row mb15" id="main-content"></div>
+  </div>
+  <div class="container">
+    <div class="row mb15">
+      <div class="col-lg-3">
+        <h3 clear="btn danger">点击登录(<div id="current_user"></div>)</h3>
+        <ul class="list-group" id="userlist">
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDAsImV4cCI6MTU0NjQ5NjQ0Mn0.BReYG-_3G5K912o4fagrzFo1WsCci542_c_xSxWx8hM" data-id="1000">1000</li>
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDEsImV4cCI6MTU0NjQ5NjQ0Mn0.SkU7LVMPCXBriF46hJBjp4e6F2OhC-m61Hb-zELsk8M" data-id="1001">1001</li>
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDIsImV4cCI6MTU0NjQ5NjQ0Mn0.N3AIL3t-hcJKNBkrL6mdqQI90c37hcxWOSIfsslm5bY" data-id="1002">1002</li>
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDMsImV4cCI6MTU0NjQ5NjQ0Mn0.sG4h1fiG_gcn_TY18foCNHOVXA-IEr3hFquyCnNCbm8" data-id="1003">1003</li>
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDQsImV4cCI6MTU0NjQ5NjQ0Mn0.7WlZPxWWbwXm7-g2XhrYCjVlgF5utTpIdWxJJ81tjnI" data-id="1004">1004</li>
+          <li class="list-group-item" data-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyaWQiOjEwMDUsImV4cCI6MTU0NjQ5NjQ0Mn0._FaV68KSVt5rFAv8J8DpDCN-QtNFqBcG_vpWJvwH8Bg" data-id="1005">1005</li>
+        </ul>
+      </div>
+      <div class="col-lg-3">
+        <h3 clear="btn danger">用户列表</h3>
+        <ul class="list-group" id="chat_userlist">
+          <li class="list-group-item"  data-id="1000">1000</li>
+          <li class="list-group-item"  data-id="1001">1001</li>
+          <li class="list-group-item"  data-id="1002">1002</li>
+          <li class="list-group-item"  data-id="1003">1003</li>
+          <li class="list-group-item"  data-id="1004">1004</li>
+          <li class="list-group-item"  data-id="1005">1005</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- BEGIN: PAGE SCRIPTS -->
+
+  <!-- jQuery -->
+  <script src="vendor/jquery/jquery-1.11.1.js"></script>
+  <script src="vendor/jquery/jquery_ui/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
+<script src="assets/js/bootstrap.js" crossorigin="anonymous"></script>
+  <script src="assets/js/main.js"></script>
+  <script type="text/javascript">
+  jQuery(document).ready(function() {
+    "use strict";
+    if(typeof localStorage.myToken == 'undefined'){
+      $('#main-content').load('login.html'); 
+    }
+    //$('#main-content').load('chat.html');
+    
+    $('#userlist li').on('click', function(){
+      var id = $(this).data('id'), token = $(this).data('token');
+      localStorage.myToken = token;
+      localStorage.userId = id;
+      layer.msg('login sucess');
+    });
+    $('#chat_userlist li').on('click', function(){
+      var id = $(this).data('id');
+      localStorage.chat_object_id = id;
+      $('#main-content').load('chat.html');
+    });
+    $('#current_user').html(localStorage.userId);
+  });
+  </script>
+  <!-- END: PAGE SCRIPTS -->
+
+</body>
+
+</html>
