@@ -77,13 +77,19 @@
       localStorage.userId = id;
       layer.msg('login sucess');
     });
+    // chat with 
     $('#chat_userlist li').on('click', function(){
       var id = $(this).data('id');
       localStorage.chat_object_id = id;
+      if(localStorage.myToken == undefined || localStorage.userId == undefined){
+        layer.msg('no login');
+        return false;
+      }
       $('#main-content').load('chat.html');
     });
     $('#current_user').html(localStorage.userId);
   });
+
   </script>
   <!-- END: PAGE SCRIPTS -->
 
