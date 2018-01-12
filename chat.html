@@ -270,7 +270,7 @@ ws.onmessage = function(msg){
                 var server_return = data[i]['body'], m=0;
                 msg_list = server_return['data']['list'];
                 if(msg_list.length == 0){
-                    layer.msg();
+                    layer.msg("没有更多了");
                 }
                 
                 for(m=0; m <msg_list.length; m++){
