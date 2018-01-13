@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <!-- Chat Widget -->
 <div class="col-md-10">
   <div class="panel panel-widget chat-widget">
@@ -15,7 +16,12 @@
     <div class="panel-footer">
       <div class="input-group">
         <input id="msg_content" type="text" class="form-control" placeholder="Enter your message here...">
-        <span class="input-group-btn">img</span>
+        <span class="input-group-btn">
+            <button class="btn btn-default btn-gradient" type="button">
+                <span class="glyphicon glyphicon-picture">img</span>
+            </button>
+            <input type="file" class="gui-file" id="pic_send_btn">
+        </span>
         <span class="input-group-btn">
           <button id="msg_send_btn" class="btn btn-default btn-gradient" type="button">发送消息</button>
         </span>
