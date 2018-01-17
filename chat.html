@@ -99,7 +99,7 @@ var append_to_dialog = function(msg_obj, pos){
                 </a>\
               </div>';
         }else{
-            is_self_style = 'background-color:green';
+            is_self_style = '';
         }
         if( /<img/.test(msg_obj['pic_thumb'])){
             img = msg_obj['pic_thumb'];
@@ -263,11 +263,12 @@ ws.onmessage = function(msg){
             case 2008:  //server端返回未读消息用户列表
                 var server_return = data[i]['body'];
                 if(server_return['code'] == 0){
-                    var str='',m,s_id, total_count = server_return['data']['total_count'];
+                    var str='',m,s_id, total_count = server_return['data']['total_count'],num=0;
                     var list = server_return['data']['list'];
                     for(m in list){
                         s_id = list[m]['sender_id'];
-                        str += '<li class="list-group-item"  data-id="' +s_id+ '">' +s_id+ '</li>';
+                        num = list[m]['count']; // 未读消息数
+                        str += '<li class="list-group-item"  data-id="' +s_id+ '">' +s_id+ '<span class="num">'+num+'</span></li>';
                     }
                     $('#unread_userlist').append(str);
                 }else{
@@ -302,7 +303,7 @@ ws.onmessage = function(msg){
                         'cmd' : 2011,
                         'seq' : 1,
                         'body' : {
-                            'sender_id' : localStorage.chat_object_id
+                            'sender_id' : parseInt(localStorage.chat_object_id)
                         }
                     });
                     //alert(return_data)
@@ -374,6 +375,9 @@ var send = function(msg){
         }
     };
     var data1 = JSON.stringify(data);
+    if(ws.readyState == 3){
+        layer.msg('连接已断开');
+    }
     ws.send(data1);
     msg_content.val('');
 }
@@ -437,9 +441,8 @@ $('#more').on('click', function(){
 $('#select_img_btn').click(function(){
     $('#select_img').trigger('click');
 });
-$('#select_img').select(function(){
-    alert(22)
-}).change(function(){
+//选择发送图片
+$('#select_img').change(function(){
     var reader = new FileReader();
     var files = document.getElementById("select_img").files[0];
     reader.readAsArrayBuffer(files);
@@ -448,16 +451,6 @@ $('#select_img').select(function(){
     //FileReader检测到有文件改变时自动触发
     reader.onload = function(e){
         var result = reader.result;
-        console.dir(md5(result))
-        //发送 POST 请求
-        // axios({
-        //     method: 'post',
-        //     url: 
-        // }).then(function(res){
-        //     console.dir(res);
-        // }).catch(function (error) {
-        //     console.log(error);
-        // });
         $.ajax({
             url : file_server + '/query?method=getResume&file_name=123&file_md5=' + md5(result),
             type : 'get',
@@ -492,19 +485,10 @@ $('#select_img').select(function(){
                             });
                         }
                     })
-                    // axios({
-                    //     method: 'post',
-                    //     url: file_server + '/upload?usage=3&file_md5=' + md5(result),
-                    //     data: {
-                    //         formData
-                    //     }
-                    // })
                 }
             }
         });
-
     }
 });
 //upload file
-
 </script>

@@ -41,12 +41,17 @@
   <script src="vendor/jquery/jquery-1.11.1.js"></script>
   <script src="vendor/jquery/jquery_ui/jquery-ui.min.js"></script>
   <script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
-<script src="assets/js/axios.js" crossorigin="anonymous"></script>
+  <script src="assets/js/axios.js" crossorigin="anonymous"></script>
   <script src="assets/js/main.js"></script>
   <script type="text/javascript">
   jQuery(document).ready(function() {
     "use strict";
-    
+    var url = 'http://120.25.83.163:8090/query?method=getResume&file_name=123&file_md5=',
+    file_md5 = '596e012c83f2e63f908a684277b823ff';
+    axios.get(url + file_md5).catch(function(error){
+      console.dir(error);
+    });
+  });
   </script>
   <!-- END: PAGE SCRIPTS -->
 
