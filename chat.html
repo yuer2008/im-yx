@@ -63,7 +63,7 @@ var append_to_dialog = function(msg_obj, pos){
     if(typeof pos == 'undefined'){
         pos = 'tail';
     }
-    if(msg_obj['type'] == 1){
+    if(msg_obj['type'] == 1){// text
         var tpl = '<div class="media">';
         var is_self_style = '';
         if(msg_obj['sender_id'] != localStorage.userId){
@@ -89,8 +89,31 @@ var append_to_dialog = function(msg_obj, pos){
               </div>';
         }
         tpl += '</div>';
-    }else if(msg_obj['type'] == 2){
-
+    }else if(msg_obj['type'] == 2){ // img
+        var tpl = '<div class="media">';
+        var is_self_style = '';
+        if(msg_obj['sender_id'] != localStorage.userId){
+            tpl += '<div class="media-left">\
+                <a href="#">\
+                  <img class="media-object" alt="64x64" src="assets/img/avatars/1.jpg">\
+                </a>\
+              </div>';
+        }else{
+            is_self_style = 'background-color:green';
+        }
+        tpl += '<div class="media-body" style="' +is_self_style+ '">\
+            <span class="media-status offline"></span>\
+            <h5 class="media-heading">' + msg_obj['sender_id'] + '\
+            </h5>' + msg_obj['pic_thumb'] + '\
+          </div>';
+        if(msg_obj['sender_id'] == localStorage.userId){
+            tpl += '<div class="media-right">\
+                <a href="#">\
+                  <img class="media-object" alt="64x64" src="assets/img/avatars/1.jpg">\
+                </a>\
+              </div>';
+        }
+        tpl += '</div>';
     }
     if(pos == 'tail'){
         board.append(tpl);
@@ -183,6 +206,7 @@ ws.onmessage = function(msg){
             case 2003: //收到聊天消息 receive message from server
             
                 var receive_msg_content = data[i]['body'];
+                console.dir(receive_msg_content);
                 if(receive_msg_content['data']['receiver_id'] == localStorage.userId){
                     //给服务器回包
                     var return_data = JSON.stringify({
@@ -208,8 +232,17 @@ ws.onmessage = function(msg){
                     }else if(receive_msg_content['data']['msg_type'] == 2){//img
                         var img_thumb = receive_msg_content['data']['content']['pic']['pic_thumb'];
                         var img_src = receive_msg_content['data']['content']['pic']['pic_src'];
-                        var img = '<img src="' + img_thumb + '">';
-                        append_to_dialog(img, 'tail');
+                        var img_src1 = '<img src="' + img_src + '">';
+                        var img_thumb1 = '<img src="' + img_thumb + '">';
+                        var msg_obj = {
+                            type : 2,
+                            msg : '',
+                            time: receive_msg_content['data']['time'],
+                            sender_id : receive_msg_content['data']['sender_id'],
+                            pic_thumb : img_thumb1,
+                            pic_src : img_src1
+                        }
+                        append_to_dialog(msg_obj, 'tail');
                     }
                 }
             break;
