@@ -17,10 +17,10 @@
       <div class="input-group">
         <input id="msg_content" type="text" class="form-control" placeholder="Enter your message here...">
         <span class="input-group-btn">
-            <button class="btn btn-default btn-gradient" type="button">
+            <button class="btn btn-default btn-gradient" type="button" id="select_img_btn">
                 <span class="glyphicon glyphicon-picture">img</span>
             </button>
-            <input type="file" class="gui-file" id="pic_send_btn">
+            <input type="file" class="gui-file" id="select_img" value="select file">
         </span>
         <span class="input-group-btn">
           <button id="msg_send_btn" class="btn btn-default btn-gradient" type="button">发送消息</button>
@@ -38,11 +38,14 @@
 
 <script src="assets/js/main.js"></script>
 <script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="assets/js/md5.js"></script>
 <script type="text/javascript">
 
 'use strict';
 var send_btn = $('#msg_send_btn'),board = $('#board'),
-msg_content = $('#msg_content');
+msg_content = $('#msg_content'),
+file_server = 'http://192.168.2.43:9090';
 
 var ws = new WebSocket('ws://192.168.2.222:8090/sub');
 
@@ -246,12 +249,12 @@ ws.onmessage = function(msg){
                                 time: msg_list[m]['time'],
                                 sender_id : server_return['data']['sender_id']
                             }
-                            append_to_dialog(msg_obj ,'tail');
+                            append_to_dialog(msg_obj ,'head');
                         }else if(msg_list[m]['msg_type'] == 2){//img
                             var img_thumb = msg_list[m]['content']['pic']['pic_thumb'];
                             var img_src = msg_list[m]['content']['pic']['pic_src'];
                             var img = '<img src="' + img_thumb + '">';
-                            append_to_dialog(img ,'tail');
+                            append_to_dialog(img ,'head');
                         }
                     } // for end
                     //收完消息后 给服务器回包
@@ -321,13 +324,13 @@ var send = function(msg){
         {
             //"sender_id":1000, //用户id
             "receiver_id" : parseInt(localStorage.chat_object_id),     //目标对象id
-            "msg_type":1,           //消息类型 1文本；2图片；3表情……
-            "content":{
-                "msg":{"text" : msg['msg']},  //文字聊天信息
-                "pic":{
-                    "pic_src":"pic1",           //原图路径
-                    "pic_thumb":"pic2"      //缩略图路径
-                    }
+            "msg_type" : msg['type'],           //消息类型 1文本；2图片；3表情……
+            "content" : {
+                "msg" : {"text" : msg['msg']},  //文字聊天信息
+                "pic" : {
+                    "pic_src" : msg['pic_src'],           //原图路径
+                    "pic_thumb" : msg['pic_thumb']      //缩略图路径
+                }
             }
         }
     };
@@ -336,7 +339,7 @@ var send = function(msg){
     msg_content.val('');
 }
 
-
+// 点击发送消息
 send_btn.on('click', function(){
     var msg = msg_content.val();
     if(msg == ''){
@@ -354,6 +357,8 @@ msg_content.keydown(function(event){
         send({type:1,msg:msg,time : now_time(),sender_id : parseInt(localStorage.userId)});
     }
 });
+//发送图片
+
 //退出
 $('#logout').on('click', function(){
     localStorage.clear();
@@ -389,4 +394,79 @@ $('#more').on('click', function(){
     //alert(localStorage.chat_object_id)
     ws.send(JSON.stringify(data));
 });
+//select img file
+$('#select_img_btn').click(function(){
+    $('#select_img').trigger('click');
+});
+$('#select_img').select(function(){
+    alert(22)
+}).change(function(){
+    var reader = new FileReader();
+    var files = document.getElementById("select_img").files[0];
+    reader.readAsArrayBuffer(files);
+    var formData = new FormData();
+    formData.append('file',files);
+    //FileReader检测到有文件改变时自动触发
+    reader.onload = function(e){
+        var result = reader.result;
+        console.dir(md5(result))
+        //发送 POST 请求
+        // axios({
+        //     method: 'post',
+        //     url: 
+        // }).then(function(res){
+        //     console.dir(res);
+        // }).catch(function (error) {
+        //     console.log(error);
+        // });
+        $.ajax({
+            url : file_server + '/query?method=getResume&file_name=123&file_md5=' + md5(result),
+            type : 'get',
+            dataType : 'json',
+            success :function(res){
+                
+                if(res['data']['file_id'] != '0'){
+                    var id = res['data']['file_id'],group = res['data']['group_name'],
+                    path = res['data']['remote_path'];
+                    var img_path = file_server + '/query?method=download&fileid='+id+'&groupname='+group+'&remotepath='+path;
+                    //file exists
+                    send({
+                        type:2,msg:'',time : now_time(),sender_id : parseInt(localStorage.userId),
+                        pic_src : img_path,
+                        pic_thumb : img_path
+                    });
+                }else{
+                    alert(3)
+                    // file not exist; upload
+                    $.ajax({
+                        url : file_server + '/upload?usage=3&file_md5=' + md5(result),
+                        type : 'post',
+                        dataType : 'text',
+                        processData : false,
+                        contentType : false,
+                        data : formData,
+                        success : function(res){// get string
+                            var img_path = file_server + '/query?method=download&' + res;
+                            send({
+                                type:2,msg:'',time : now_time(),sender_id : parseInt(localStorage.userId),
+                                pic_src : img_path,
+                                pic_thumb : img_path
+                            });
+                        }
+                    })
+                    // axios({
+                    //     method: 'post',
+                    //     url: file_server + '/upload?usage=3&file_md5=' + md5(result),
+                    //     data: {
+                    //         formData
+                    //     }
+                    // })
+                }
+            }
+        });
+
+    }
+});
+//upload file
+
 </script>
