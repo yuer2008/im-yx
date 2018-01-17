@@ -90,7 +90,7 @@ var append_to_dialog = function(msg_obj, pos){
         }
         tpl += '</div>';
     }else if(msg_obj['type'] == 2){ // img
-        var tpl = '<div class="media">';
+        var tpl = '<div class="media">', img ='';
         var is_self_style = '';
         if(msg_obj['sender_id'] != localStorage.userId){
             tpl += '<div class="media-left">\
@@ -101,10 +101,16 @@ var append_to_dialog = function(msg_obj, pos){
         }else{
             is_self_style = 'background-color:green';
         }
+        if( /<img/.test(msg_obj['pic_thumb'])){
+            img = msg_obj['pic_thumb'];
+        }else{
+            img = '<img src="' +msg_obj['pic_thumb']+ '">';
+        }
+       
         tpl += '<div class="media-body" style="' +is_self_style+ '">\
             <span class="media-status offline"></span>\
             <h5 class="media-heading">' + msg_obj['sender_id'] + '\
-            </h5>' + msg_obj['pic_thumb'] + '\
+            </h5>' +img + '\
           </div>';
         if(msg_obj['sender_id'] == localStorage.userId){
             tpl += '<div class="media-right">\
@@ -206,7 +212,7 @@ ws.onmessage = function(msg){
             case 2003: //收到聊天消息 receive message from server
             
                 var receive_msg_content = data[i]['body'];
-                console.dir(receive_msg_content);
+                
                 if(receive_msg_content['data']['receiver_id'] == localStorage.userId){
                     //给服务器回包
                     var return_data = JSON.stringify({
@@ -468,8 +474,7 @@ $('#select_img').select(function(){
                         pic_src : img_path,
                         pic_thumb : img_path
                     });
-                }else{
-                    alert(3)
+                }else{                   
                     // file not exist; upload
                     $.ajax({
                         url : file_server + '/upload?usage=3&file_md5=' + md5(result),
