@@ -38,7 +38,7 @@
 
 <script src="assets/js/main.js"></script>
 <script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="assets/js/spark-md5.js"></script>
 <script src="assets/js/md5.js"></script>
 <script type="text/javascript">
 
@@ -448,11 +448,14 @@ $('#select_img').change(function(){
     reader.readAsArrayBuffer(files);
     var formData = new FormData();
     formData.append('file',files);
+    var spark = new SparkMD5.ArrayBuffer();
     //FileReader检测到有文件改变时自动触发
     reader.onload = function(e){
         var result = reader.result;
+        spark.append(e.target.result);
+
         $.ajax({
-            url : file_server + '/query?method=getResume&file_name=123&file_md5=' + md5(result),
+            url : file_server + '/query?method=getResume&file_name=123&file_md5=' + spark.end(),
             type : 'get',
             dataType : 'json',
             success :function(res){
