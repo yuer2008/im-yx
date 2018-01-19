@@ -40,6 +40,7 @@
 <script type="text/javascript" src="assets/layer-v2.1/layer.js"></script>
 <script src="assets/js/spark-md5.js"></script>
 <script src="assets/js/md5.js"></script>
+
 <script type="text/javascript">
 
 'use strict';
@@ -47,7 +48,7 @@ var send_btn = $('#msg_send_btn'),board = $('#board'),
 msg_content = $('#msg_content'),
 file_server = 'http://192.168.2.43:9090';
 
-var ws = new WebSocket('ws://192.168.2.222:8090/sub');
+var ws = new WebSocket('ws://192.168.2.43:8090/sub');
 
 //聊天对象
 var object_id = localStorage.chat_object_id;
@@ -73,7 +74,7 @@ var append_to_dialog = function(msg_obj, pos){
                 </a>\
               </div>';
         }else{
-            is_self_style = 'background-color:green';
+            is_self_style = 'background-color:#FFEAC8';
         }
         tpl += '<div class="media-body" style="' +is_self_style+ '">\
             <span class="media-status offline"></span>\
@@ -134,7 +135,7 @@ ws.onopen = function(event){
     }
     var auth_data = {
         "ver": 1,
-        "cmd": 1001,                
+        "cmd": 1001,
         "seq": 1,                   //客户端自己的标识，服务器原样返回
         "body":
             {
@@ -212,8 +213,8 @@ ws.onmessage = function(msg){
             case 2003: //收到聊天消息 receive message from server
             
                 var receive_msg_content = data[i]['body'];
-                
-                if(receive_msg_content['data']['receiver_id'] == localStorage.userId){
+                //收到当前窗口用户的消息
+                if(receive_msg_content['data']['sender_id'] == localStorage.chat_object_id){
                     //给服务器回包
                     var return_data = JSON.stringify({
                         'ver' : 1,
@@ -250,6 +251,9 @@ ws.onmessage = function(msg){
                         }
                         append_to_dialog(msg_obj, 'tail');
                     }
+                }else{
+                    //收到了其他用户消息，先存着作为未读消息
+                    chat_add_unread_userlist($('#unread_userlist'), receive_msg_content);
                 }
             break;
             case 2005:  //server的确认消息的回复信息
@@ -263,14 +267,9 @@ ws.onmessage = function(msg){
             case 2008:  //server端返回未读消息用户列表
                 var server_return = data[i]['body'];
                 if(server_return['code'] == 0){
-                    var str='',m,s_id, total_count = server_return['data']['total_count'],num=0;
+                    var total_count = server_return['data']['total_count'];
                     var list = server_return['data']['list'];
-                    for(m in list){
-                        s_id = list[m]['sender_id'];
-                        num = list[m]['count']; // 未读消息数
-                        str += '<li class="list-group-item"  data-id="' +s_id+ '">' +s_id+ '<span class="num">'+num+'</span></li>';
-                    }
-                    $('#unread_userlist').append(str);
+                    chat_set_unread_userlist($('#unread_userlist'), list);
                 }else{
                     //get user list fail
                     layer.msg(data[i]['body']['msg']);
@@ -419,6 +418,7 @@ $('#unread_userlist').on('click', 'li', function(){
             "page_size" : 100
         }
     };
+    $(this).find('span').html(0).hide();
     ws.send(JSON.stringify(data));
 });
 // 获取更多聊天历史消息
